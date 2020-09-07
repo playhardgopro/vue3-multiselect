@@ -4,6 +4,10 @@
       ref="control"
       class="multi-select__control"
       :class="{ disabled: disabled }"
+      :style="{
+        'border-bottom-right-radius': isOptionsShown ? '0' : '',
+        'border-bottom-left-radius': isOptionsShown ? '0' : '',
+      }"
       @click="showOptions"
     >
       <div
@@ -264,7 +268,7 @@ export default {
       this.isOptionsShown = true;
       this.handleFocus();
     },
-    handleSelectOption(selectedOption) {
+    handleSelectOption(selectedOption: string) {
       if (
         this.selectedOptions.some((option) =>
           isEqual(option[this.optionIdName], selectedOption[this.optionIdName])
@@ -288,7 +292,7 @@ export default {
     handleBlur() {
       this.$refs.control.classList.remove("focused");
     },
-    async makeRequestToDB(searchQuery) {
+    async makeRequestToDB(searchQuery: string) {
       const response = await this.asyncFunction(searchQuery);
       return response;
     },
@@ -326,6 +330,10 @@ export default {
 ul {
   padding: 0;
   margin: 0;
+
+  &:first-of-type {
+    border-top: 2px solid rgba(119, 139, 235, 1);
+  }
   & li {
     list-style-type: none;
   }
@@ -347,25 +355,25 @@ ul {
   position: relative;
   height: 35px;
   border: 1px solid rgba(130, 130, 130, 0.08);
-  border-top: 0px solid rgba(130, 130, 130, 0.08);
+  border-top: 0px solid rgba(84, 109, 229, 1);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   font-family: sans-serif;
   line-height: 1.25;
-  color: #7f8a9b !important;
+  color: rgba(48, 57, 82, 1) !important;
 
   &.multi-select__option_clickable:hover {
-    background-color: rgba(130, 130, 130, 0.04);
+    background-color: rgba(119, 139, 235, 0.5);
     cursor: pointer;
     &.selected {
-      background-color: rgba(130, 130, 130, 0.14);
+      background-color: rgba(119, 139, 235, 1);
     }
   }
   &.multi-select__option_clickable:active {
     background-color: rgba(130, 130, 130, 0.2);
   }
   &.multi-select__option_clickable.selected {
-    background-color: rgba(130, 130, 130, 0.08);
+    background-color: rgba(245, 205, 121, 0.2);
   }
 }
 .multi-select__control {
@@ -376,19 +384,19 @@ ul {
   font-size: 0.875rem;
   line-height: 1.25;
   min-height: 41.5px;
-  background-color: #fff;
+  background-color: transparent;
   background-image: none;
   background-clip: padding-box;
-  border: 1px solid rgba(130, 130, 130, 0.15);
-  border-radius: 0;
-  color: #7f8a9b !important;
+  border: 2px solid rgba(84, 109, 229, 1);
+  border-radius: 4px;
+  color: rgba(48, 57, 82, 1) !important;
   touch-action: manipulation;
   overflow: visible;
   font-family: sans-serif;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   &.focused {
     background-color: #fff;
-    border-color: #8ad4ee !important;
+    border-color: rgba(119, 139, 235, 1) !important;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   }
   &.disabled {
@@ -409,11 +417,11 @@ ul {
       position: relative;
       right: 0;
       top: 65%;
-      color: #999;
+      color: rgba(48, 57, 82, 1);
       margin-bottom: 8px;
       border-style: solid;
       border-width: 6px 6px;
-      border-color: #999 transparent transparent;
+      border-color: rgba(48, 57, 82, 1) transparent transparent;
       content: "";
     }
   }
@@ -423,13 +431,18 @@ ul {
   flex-grow: 1;
   width: 50px;
   margin-bottom: 0.5rem;
+  &::placeholder {
+    color: rgba(48, 57, 82, 1) !important;
+    font-size: 0.875rem;
+  }
 }
+
 .multi-select__list-container {
   max-height: 400px;
   overflow-y: auto;
   position: absolute;
   background-color: #fff;
-  top: 0;
+  top: -2px;
   left: 0;
   right: 0;
   z-index: 9999 !important;
@@ -443,7 +456,7 @@ ul {
   margin-bottom: 0.5rem;
   padding: 3px 6px;
   border-radius: 6px;
-  background-color: rgba(130, 130, 130, 0.15);
+  background-color: rgba(247, 215, 148, 0.4);
   min-width: 75px;
 
   .multi-select__tag-text {
@@ -461,7 +474,7 @@ ul {
     transition: all 200ms ease-in;
 
     &:hover {
-      background-color: rgba(130, 130, 130, 0.15);
+      background-color: rgba(247, 215, 148, 0.8);
       transition: all 200ms ease-in;
     }
   }
