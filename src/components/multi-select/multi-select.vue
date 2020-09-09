@@ -54,84 +54,85 @@
         </span>
 
         <ul v-if="!showLoader">
-          <template v-if="OPTIONS_FROM_SERVER.length">
-            <li
-              v-for="(option, id) of OPTIONS_FROM_SERVER"
-              :key="`option-from-server-${option[optionIdName]}-${id}`"
+          <li
+            v-for="(option, id) of OPTIONS_TO_SHOW"
+            :key="`option-from-server-${option[optionIdName]}-${id}`"
+          >
+            <span
+              class="multi-select__option multi-select__option_clickable"
+              :class="{
+                selected: selectedOptions.some(
+                  (el) => el[optionIdName] === option[optionIdName]
+                ),
+              }"
+              @click="handleSelectOption(option)"
             >
-              <span
-                class="multi-select__option multi-select__option_clickable"
-                :class="{
-                  selected: selectedOptions.some(
-                    (el) => el[optionIdName] === option[optionIdName]
-                  ),
-                }"
-                @click="handleSelectOption(option)"
-              >
-                {{ option[trackBy] || noSuchField }}
-              </span>
-            </li>
-          </template>
-          <template v-if="!OPTIONS_FROM_SERVER.length && cashedInput === null">
-            <li
-              v-for="(option, id) of DEFAULT_OPTIONS"
-              :key="`option-${option[optionIdName]}-${id}`"
+              {{ option[trackBy] || noSuchField }}
+            </span>
+          </li>
+          <!-- <li
+            v-for="(option, id) of DEFAULT_OPTIONS"
+            :key="`option-${option[optionIdName]}-${id}`"
+          >
+            <span
+              class="multi-select__option multi-select__option_clickable"
+              :class="{
+                selected: selectedOptions.some(
+                  (el) => el[optionIdName] === option[optionIdName]
+                ),
+              }"
+              @click="handleSelectOption(option)"
             >
-              <span
-                class="multi-select__option multi-select__option_clickable"
-                :class="{
-                  selected: selectedOptions.some(
-                    (el) => el[optionIdName] === option[optionIdName]
-                  ),
-                }"
-                @click="handleSelectOption(option)"
-              >
-                {{ option[trackBy] || noSuchField }}
-              </span>
-            </li>
-            <li
-              v-for="(option, id) in OPTIONS_LIMIT"
-              :key="`option-limit-${option[optionIdName]}-${id}`"
+              {{ option[trackBy] || noSuchField }}
+            </span>
+          </li>
+          <li
+            v-for="(option, id) in OPTIONS_LIMIT"
+            :key="`option-limit-${option[optionIdName]}-${id}`"
+          >
+            <span
+              class="multi-select__option multi-select__option_clickable"
+              :class="{
+                selected: selectedOptions.some(
+                  (el) => el[optionIdName] === option[optionIdName]
+                ),
+              }"
+              @click="handleSelectOption(option)"
             >
-              <span
-                class="multi-select__option multi-select__option_clickable"
-                :class="{
-                  selected: selectedOptions.some(
-                    (el) => el[optionIdName] === option[optionIdName]
-                  ),
-                }"
-                @click="handleSelectOption(option)"
-              >
-                {{ option[trackBy] || noSuchField }}
-              </span>
-            </li>
-          </template>
+              {{ option[trackBy] || noSuchField }}
+            </span>
+          </li> -->
         </ul>
-        <template v-if="!OPTIONS_FROM_SERVER.length && cashedInput !== null">
-          <div v-show="isNoOption" class="multi-select__option">
-            {{ noOptionsFound }}
-          </div>
-        </template>
+        <div v-show="isNoOption" class="multi-select__option">
+          {{ noOptionsFound }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 <script lang="ts">
+/* eslint-disable no-unused-vars */
+import Vue, { PropType } from "vue";
 import Loading from "../loading/loading.vue";
-
-function isEqual(first, second) {
+import {
+  defineComponent,
+  ref,
+  computed,
+  ComponentRenderProxy,
+} from "@vue/composition-api";
+function isEqual(first: string, second: string) {
   return first === second;
 }
 
-function isNotEqual(first, second) {
+function isNotEqual(first: string, second: string) {
   return first !== second;
 }
 
-function debounce(func, wait, immediate?) {
-  let timeout;
+function debounce(func: Function, wait: number, immediate?: boolean) {
+  let timeout: any;
 
-  return function executedFunction() {
-    const context = this;
+  return function executedFunction(this: any) {
+    const context: any = this;
     const args = arguments;
 
     const later = function() {
@@ -149,19 +150,33 @@ function debounce(func, wait, immediate?) {
   };
 }
 
-export default {
+declare type Option = {
+  name: string;
+  number: string;
+  id: string;
+};
+declare interface DataInterface {
+  isOptionsShown: boolean;
+  OPTIONS_FROM_SERVER: Option[];
+  OPTIONS_LIMIT: Option[];
+  isLoading: boolean;
+  inputSearch: string;
+  selectedOptions: Option[];
+}
+type ValueOf<T> = T[keyof T];
+
+export default defineComponent({
   name: "MultiSelectComponent",
   components: { Loading },
   props: {
-    options: { type: Array, default: () => [] },
+    options: {
+      type: Object as () => Option[],
+      default: () => [],
+    },
     // debounceTime: { type: Number, default: 500 },
     placeholder: {
       type: String,
       default: "",
-    },
-    asyncFunction: {
-      type: Function,
-      default: () => {},
     },
     trackBy: {
       type: String,
@@ -171,6 +186,9 @@ export default {
       type: String,
       default: "No data",
     },
+    asyncFunction: {
+      type: Function as PropType<(searchQuery: string) => Promise<Option[]>>,
+    },
     multiselect: {
       type: Boolean,
       default: false,
@@ -179,12 +197,12 @@ export default {
       type: String,
       default: "Not found",
     },
-    propInput: {
+    value: {
+      type: Array as () => Option[],
       default: () => [],
-      required: false,
     },
     optionIdName: {
-      type: String,
+      type: String as () => keyof Option,
       required: true,
     },
     disabled: {
@@ -193,22 +211,23 @@ export default {
     },
   },
   model: {
-    prop: "propInput",
+    prop: "value",
     event: "select",
   },
   data() {
-    return {
+    const DataTyped: DataInterface = {
       // inputSearch: this.propInput,
       isOptionsShown: false,
       OPTIONS_FROM_SERVER: [],
       OPTIONS_LIMIT: [],
       isLoading: false,
       inputSearch: "",
-      selectedOptions: this.propInput || [],
+      selectedOptions: this.value || [],
     };
+    return DataTyped;
   },
   watch: {
-    cashedInput: debounce(async function() {
+    cashedInput: debounce(async function(this: ComponentRenderProxy) {
       if (this.DEFAULT_OPTIONS.length === 0 && this.cashedInput !== null) {
         this.isLoading = true;
         const response = await this.makeRequestToDB(this.inputSearch);
@@ -218,30 +237,28 @@ export default {
         this.OPTIONS_FROM_SERVER = [];
       }
     }, 500),
-    "selectedOptions.length": {
-      handler() {
-        this.handleSelect();
-      },
+    "selectedOptions.length"(this: ComponentRenderProxy) {
+      this.handleSelect();
     },
   },
   computed: {
-    DEFAULT_OPTIONS(): object[] {
+    DEFAULT_OPTIONS(): Option[] {
       if (this.cashedInput) {
         return this.options.filter((option) => {
-          if (typeof option[this.optionIdName] === "string") {
-            return option[this.optionIdName].includes(
-              this.cashedInput.toString()
-            );
-          }
-          if (typeof option[this.optionIdName] === "number") {
-            const arrayOfNumbers = option[this.optionIdName]
+          if (typeof option[this.optionIdName].toString() === "string") {
+            return option[this.optionIdName]
               .toString()
-              .split("");
-            return arrayOfNumbers.includes(this.cashedInput);
+              .includes(this.cashedInput || "");
           }
+          // if (typeof option[this.optionIdName] === "number") {
+          //   const arrayOfNumbers = option[this.optionIdName]
+          //     .toString()
+          //     .split("");
+          //   return arrayOfNumbers.includes(this.cashedInput);
+          // }
         });
       }
-      return this.options;
+      return this.options.length ? this.options : [];
     },
     showLoader(): boolean {
       return this.isLoading && this.inputSearch !== "";
@@ -262,13 +279,20 @@ export default {
         !this.DEFAULT_OPTIONS.length
       );
     },
+    OPTIONS_TO_SHOW(): Option[] {
+      return [
+        ...this.OPTIONS_FROM_SERVER,
+        ...this.DEFAULT_OPTIONS,
+        ...this.OPTIONS_LIMIT,
+      ];
+    },
   },
   methods: {
     showOptions() {
       this.isOptionsShown = true;
       this.handleFocus();
     },
-    handleSelectOption(selectedOption: string) {
+    handleSelectOption(selectedOption: Option) {
       if (
         this.selectedOptions.some((option) =>
           isEqual(option[this.optionIdName], selectedOption[this.optionIdName])
@@ -287,16 +311,18 @@ export default {
       this.inputSearch = "";
     },
     handleFocus() {
-      this.$refs.control.classList.add("focused");
+      this.$refs?.control?.classList.add("focused");
     },
     handleBlur() {
-      this.$refs.control.classList.remove("focused");
+      this.$refs?.control?.classList.remove("focused");
     },
-    async makeRequestToDB(searchQuery: string) {
-      const response = await this.asyncFunction(searchQuery);
-      return response;
+    async makeRequestToDB(searchQuery: string): Promise<Option[]> {
+      if (typeof this.asyncFunction === "function") {
+        return this.asyncFunction(searchQuery);
+      }
+      return [];
     },
-    deleteTag(tag) {
+    deleteTag(tag: Option) {
       this.selectedOptions = this.selectedOptions.filter(
         (option) => option[this.optionIdName] !== tag[this.optionIdName]
       );
@@ -304,7 +330,7 @@ export default {
     handleSelect() {
       this.$emit("select", this.selectedOptions);
     },
-    clickOutside(e) {
+    clickOutside(e: Event) {
       if (!this.$el.contains(e.target)) {
         if (this.isOptionsShown) {
           this.isOptionsShown = false;
@@ -323,7 +349,7 @@ export default {
     const response = await this.makeRequestToDB("");
     this.OPTIONS_LIMIT = response;
   },
-};
+});
 </script>
 
 <style lang="scss" scoped>

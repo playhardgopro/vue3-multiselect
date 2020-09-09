@@ -8,7 +8,7 @@
         v-model="model"
         option-id-name="id"
         :options="options"
-        :async-function="request"
+        :async-function="requestProfiles.bind(this)"
         :trackBy="trackBy"
         :placeholder="placeholder"
         :disabled="disabled"
@@ -23,6 +23,25 @@
 // import HelloWorld from "./components/HelloWorld.vue";
 // import Select from "./components/select/select.vue";
 import MultiSelect from "./components/multi-select/multi-select.vue";
+
+async function request(searchQuery: string) {
+  function response(): User[] {
+    return ["Irina", "Mary", "Olga"].map((user, index) => ({
+      name: user,
+      number: index,
+      id: `${user}-${index}-UUID`,
+    }));
+  }
+  let promise: Promise<User[]> = new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(response());
+    }, 1000);
+  });
+  const res = await promise;
+  return res.filter((user) => {
+    return user["name"].includes(searchQuery);
+  });
+}
 
 // @Options({
 
@@ -60,27 +79,12 @@ export default {
     },
   },
   methods: {
-    async request(searchQuery: string) {
-      function response(): User[] {
-        return ["Irina", "Mary", "Olga"].map((user, index) => ({
-          name: user,
-          number: index,
-          id: `${user}-${index}-UUID`,
-        }));
-      }
-      let promise: Promise<User[]> = new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(response());
-        }, 1000);
-      });
-      const res = await promise;
-      return res.filter((user) => {
-        return user["name"].includes(searchQuery);
-      });
+    async requestProfiles(searchQuery: string) {
+      return request(searchQuery);
     },
   },
 };
-interface User {
+declare interface User {
   name: string;
   number: number;
   id: string;
