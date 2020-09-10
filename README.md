@@ -1,5 +1,5 @@
 # vue3-multiselect
-
+![ESLint](https://github.com/playhardgopro/vue3-multiselect/workflows/ESLint/badge.svg)
 ## Project setup
 ```
 npm install
