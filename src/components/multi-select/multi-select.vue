@@ -47,31 +47,15 @@
     </div>
     <div v-show="isOptionsShown" class="multi-select__list-container-wrapper">
       <div class="multi-select__list-container">
-        <span class="multi-select__option" v-show="showLoader">
+        <div class="multi-select__option" v-show="showLoader">
           <loading
             style="position: absolute; top: 0; left: 0; right:0; bottom:0; margin: auto"
           />
-        </span>
+        </div>
 
         <ul v-if="!showLoader">
           <li
             v-for="(option, id) of OPTIONS_TO_SHOW"
-            :key="`option-from-server-${option[optionIdName]}-${id}`"
-          >
-            <span
-              class="multi-select__option multi-select__option_clickable"
-              :class="{
-                selected: selectedOptions.some(
-                  (el) => el[optionIdName] === option[optionIdName]
-                ),
-              }"
-              @click="handleSelectOption(option)"
-            >
-              {{ option[trackBy] || noSuchField }}
-            </span>
-          </li>
-          <!-- <li
-            v-for="(option, id) of DEFAULT_OPTIONS"
             :key="`option-${option[optionIdName]}-${id}`"
           >
             <span
@@ -86,22 +70,6 @@
               {{ option[trackBy] || noSuchField }}
             </span>
           </li>
-          <li
-            v-for="(option, id) in OPTIONS_LIMIT"
-            :key="`option-limit-${option[optionIdName]}-${id}`"
-          >
-            <span
-              class="multi-select__option multi-select__option_clickable"
-              :class="{
-                selected: selectedOptions.some(
-                  (el) => el[optionIdName] === option[optionIdName]
-                ),
-              }"
-              @click="handleSelectOption(option)"
-            >
-              {{ option[trackBy] || noSuchField }}
-            </span>
-          </li> -->
         </ul>
         <div v-show="isNoOption" class="multi-select__option">
           {{ noOptionsFound }}
@@ -114,41 +82,14 @@
 /* eslint-disable no-unused-vars */
 import Vue, { PropType } from "vue";
 import Loading from "../loading/loading.vue";
+import { debounce, isEqual, isNotEqual } from "../utils";
+
 import {
   defineComponent,
   ref,
   computed,
   ComponentRenderProxy,
 } from "@vue/composition-api";
-function isEqual(first: string, second: string) {
-  return first === second;
-}
-
-function isNotEqual(first: string, second: string) {
-  return first !== second;
-}
-
-function debounce(func: Function, wait: number, immediate?: boolean) {
-  let timeout: any;
-
-  return function executedFunction(this: any) {
-    const context: any = this;
-    const args = arguments;
-
-    const later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-
-    const callNow = immediate && !timeout;
-
-    clearTimeout(timeout);
-
-    timeout = setTimeout(later, wait);
-
-    if (callNow) func.apply(context, args);
-  };
-}
 
 declare type Option = {
   name: string;
@@ -163,7 +104,6 @@ declare interface DataInterface {
   inputSearch: string;
   selectedOptions: Option[];
 }
-type ValueOf<T> = T[keyof T];
 
 export default defineComponent({
   name: "MultiSelectComponent",
@@ -228,7 +168,7 @@ export default defineComponent({
   },
   watch: {
     cashedInput: debounce(async function(this: ComponentRenderProxy) {
-      if (this.DEFAULT_OPTIONS.length === 0 && this.cashedInput !== null) {
+      if (this.DEFAULT_OPTIONS.length === 0 && this.cashiedInput !== null) {
         this.isLoading = true;
         const response = await this.makeRequestToDB(this.inputSearch);
         this.OPTIONS_FROM_SERVER = response;
@@ -258,7 +198,7 @@ export default defineComponent({
           // }
         });
       }
-      return this.options.length ? this.options : [];
+      return this.options;
     },
     showLoader(): boolean {
       return this.isLoading && this.inputSearch !== "";
@@ -273,18 +213,24 @@ export default defineComponent({
       return !this.selectedOptions.length ? this.placeholder : "";
     },
     isNoOption(): boolean {
-      return (
-        !this.isLoading &&
-        !this.OPTIONS_FROM_SERVER.length &&
-        !this.DEFAULT_OPTIONS.length
-      );
+      return !this.isLoading && !this.OPTIONS_TO_SHOW.length;
     },
     OPTIONS_TO_SHOW(): Option[] {
-      return [
-        ...this.OPTIONS_FROM_SERVER,
-        ...this.DEFAULT_OPTIONS,
-        ...this.OPTIONS_LIMIT,
-      ];
+      const isSearching = !!this.cashedInput;
+      const ser = !!this.OPTIONS_FROM_SERVER.length;
+      const def = !!this.DEFAULT_OPTIONS.length;
+      // const lim = !!this.OPTIONS_LIMIT.length;
+      if (isSearching) {
+        if (!def && !ser) {
+          return [];
+        }
+        if (def || ser) {
+          return [...this.OPTIONS_FROM_SERVER, ...this.DEFAULT_OPTIONS];
+        }
+      } else {
+        return [...this.DEFAULT_OPTIONS, ...this.OPTIONS_LIMIT];
+      }
+      return this.DEFAULT_OPTIONS;
     },
   },
   methods: {
@@ -346,8 +292,7 @@ export default defineComponent({
     document.removeEventListener("click", this.clickOutside);
   },
   async mounted() {
-    const response = await this.makeRequestToDB("");
-    this.OPTIONS_LIMIT = response;
+    this.OPTIONS_LIMIT = await this.makeRequestToDB("");
   },
 });
 </script>
@@ -357,9 +302,6 @@ ul {
   padding: 0;
   margin: 0;
 
-  &:first-of-type {
-    border-top: 2px solid rgba(119, 139, 235, 1);
-  }
   & li {
     list-style-type: none;
   }
@@ -473,6 +415,9 @@ ul {
   right: 0;
   z-index: 9999 !important;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  &:first-of-type {
+    border-top: 2px solid rgba(119, 139, 235, 1);
+  }
 }
 .multi-select__tag {
   display: flex;
